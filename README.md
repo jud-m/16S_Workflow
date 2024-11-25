@@ -1,9 +1,11 @@
+This is my general workflow for analyzing 16S rRNA sequencing data. Note that I am not a bioinformatics expert, these are just some things that have worked for me.
 
+### Sample description
 
-Study description
-The study used simulated landfill microcosms and tracked microbial populations over a 65 day period. Fifteen microcosms were set up identically on day 0, and DNA was sampled from all 15 microcosms on days 6 (T1), 20 (T2), 29 (T3), and 40 (T4). On day 40, three microcosms were destructively sampled for chemical measurements including sulfide, sulfate, total iron, and ferrous iron. On day 44, triplicate microcosms were "spiked" with different additives (sodium sulfate, antibiotics, and Fe(OH)3). Two additional DNA samples were taken at 50 (T5) days and 65 (T6) days of incubation from the remaining 12 microcosms. At the end of the 65 day period, all microcosms were destructively sampled for chemical concentrations of sulfide, sulfate, total iron, and ferrous iron.
+The study used microcosms and tracked microbial populations degrading waste over a 65 day period. Fifteen microcosms were set up identically on day 0, and DNA was sampled from all 15 microcosms on days 6 (T1), 20 (T2), 29 (T3), and 40 (T4). On day 44, triplicate microcosms were "spiked" with different additives (sodium sulfate, antibiotics, and Fe(OH)3). Two additional DNA samples were taken at 50 (T5) days and 65 (T6) days of incubation from the remaining 12 microcosms. At the end of the 65 day period, all microcosms were destructively sampled for chemical concentrations of sulfide, sulfate, total iron, and ferrous iron.
 
-Tutorials and papers used to produce these markdown files:
+## Tutorials and papers utilized:
+
 Callahan et al. (2016). Bioconductor Workflow for Microbiome Data Analysis: from raw reads to community analyses [Version 2]. F1000Reasearch.
 
 Handley et al., "2018 ASM Using R to Analyze the Bacterial Microbiome Workshop"
