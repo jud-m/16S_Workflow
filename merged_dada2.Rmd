@@ -1,0 +1,223 @@
+---
+title: "Dada2 Merged dada (or single end)"
+author: "Judy-Malas"
+date: "12/3/2024"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+Inputs: fastq files
+
+This script uses fastq files that have been merged in PEAR (v.0.9.11, Zhang et al., 2014). Typically you will input unmerged files and merged after quality filtering. These sequences did not end up having enough overlapping sequences after quality filtering so we merged first. For unmerged reads, just follow the steps outlined in the dada2 [tutorial](https://benjjneb.github.io/dada2/tutorial.html). It is also possible you have single end reads, which is less common but this pipeline also works for that.
+
+Check the version of dada2 you have installed, if you have a version of dada2 that is less than 1.4, you will need to find the tutorial for your version and check if the dereplication step can be skipped: I’m using version 1.26.0 so I will need to follow the [old Dada2 tutorial](https://benjjneb.github.io/dada2/tutorial_1_2.html). The main difference is that in the new tutorial you can skip the dereplication step, which is helpful if your computer has low memory.
+
+Basic steps: 
+
+STEPS 
+* Step 1: Getting the files ready
+* Step 2: Quality assessment and filtering
+  + Step 2.1: Filtering & Trimming Primers or low quality sections of data
+  + Step 2.2: Checking quality after filtering 
+* Step 3: Dereplication step
+* Step 4: Error rates
+* STEP 5: Construct ASVS with `DADA2` 
+* Step 6: Make a sequence table and remove chimeras
+* Step 7: Assign taxonomy
+* Step 8: Make a tree with `phangorn`
+* Step 9: Load metadata 
+* Step 10: Assemble phyloseq objects
+
+
+
+```{r load packages}
+
+library(dada2)
+library(phyloseq)
+library(tidyverse)
+library(readxl)
+library(ggpubr)
+
+packageVersion("dada2")
+packageVersion("phyloseq")
+
+```
+
+## Step 1: Set up file paths
+
+Set up the path to your raw data 
+```{r paths}
+
+path <- file.path("../../Projects/Hot_landfill/MH_merged") #change to where your raw data are contained
+
+fns <- list.files(path, pattern =".fastq", full.names = T) # there are 26 samples
+
+
+```
+
+
+```{r extract sample names}
+
+# Extract sample names, assuming filenames have format: SAMPLENAME_XXX.fastq
+sample.names <- sapply(strsplit(basename(fns), "_"), `[`, 1)
+
+
+```
+
+## Step 2: Quality assessment and filtering
+
+
+```{r plot quality}
+
+plotQualityProfile(fns[1:26])
+
+```
+Example read: 
+
+@MN00371:509:000H2WCHN:1:11101:21941:1043 1:N:0:CACTGCTTGA
+[GTGCCAGCCGCCGCGGTAA]TACGTAGGTGGCGAGCGTTGTCCGGAATCACTGGGCGTAAAGGGTGCGTAGGCGGAATATTAAGTCAGATGTGAAAATCCAGGGCTCAACCTTGGAACTGCATTTGAAACTGATATTCTAGAGTGCAGGAGAGGAAAGCGGAATTCCTAGTGTAGCGGTGAAATGCGTAGATATTAGGAAGAACACCAGTGGCGAAGGCGGCTTTCTGGACTGTAACTGACGCTGAGGCACGAAAGCGTGGGGAGCAAACAGG[ATTAGAAACCCCTGTAGTCC]
+
+The total length of the PEAR merged sequences is 292 and I need to trim off 19 for the forward primers, and 20 from the end for the reverse primers.
+
+
+
+These primer sequences will be trimmed off: 
+515-F: 5’ GTG CCA GCM GCC GCG GTA A 3’ 
+806- R: 5’ GGA CTA CHV GGG TWT CTA AT 3’ ---> REVERSE complement because reads are merged ATT AGA WAC CCB NGT AGT CC
+
+```{r filter and trim}
+
+filt_path <- file.path("../../Projects/Hot_landfill/MH_merged/filt")
+
+filt <- file.path(path, paste0(sample.names, "_fastq.gz"))
+
+names(filt) <- sample.names
+
+out <-  filterAndTrim(fns, filt, 
+                rev = NULL, 
+                filt.rev =NULL, 
+                trimLeft=c(19), 
+                truncLen=c(272),
+                maxN=0, 
+                maxEE=c(2), 
+                truncQ=2,
+                rm.phix=TRUE,
+                compress=TRUE, 
+                multithread=TRUE)
+
+head(out)
+
+```
+
+
+```{r check filtered quality}
+
+plotQualityProfile(filt[1:5])
+
+```
+
+
+## Step 3: Dereplication step
+
+```{r derep}
+
+derep <- derepFastq(filt, verbose = T)
+
+```
+
+
+## Step 4: Error rates
+
+```{r learn errors}
+
+err <- learnErrors(derep, multithread = T, nbases = 1e+09)
+
+```
+
+```{r plot errors}
+
+plotErrors(err, nominalQ=T )
+
+```
+
+
+## STEP 5: Construct ASVS with `DADA2` 
+
+```{r dada}
+
+dada <- dada(derep, err, multithread = T)
+
+
+
+```
+
+
+## Step 6: Make a sequence table and remove chimeras
+
+```{r construct seq tab}
+
+seqtab <- makeSequenceTable(dada)
+
+```
+
+```{r check sequence lengths}
+
+table(nchar(getSequences(seqtab))) 
+
+```
+
+```{r remove chimeras}
+seqtab.nochim <- removeBimeraDenovo(seqtab, verbose=TRUE)
+dim(seqtab.nochim)
+
+
+```
+
+
+
+## Step 7: Assign taxonomy
+
+```{r}
+
+taxa <- assignTaxonomy(seqtab.nochim, "../../H-M_Lab/longitudinal-diet/data/silva_nr99_v138.1_wSpecies_train_set.fa.gz", multithread=T)
+
+
+```
+
+
+## Step 8: Make a tree with `phangorn`
+
+## Step 9: Load metadata 
+
+```{r}
+
+meta <- read_csv("MonarchHillData230322.csv")
+
+meta.df <- as.data.frame(meta)
+
+rownames(meta.df) <- meta.df$ID
+
+
+identical(rownames(seqtab.nochim), rownames(meta.df))
+
+```
+
+
+## Step 10: Assemble phyloseq objects
+
+```{r}
+
+ps <- phyloseq(otu_table(seqtab.nochim, taxa_are_rows=F), 
+               sample_data(meta.df), 
+               tax_table(taxa))
+
+ps
+
+```
+
