@@ -17,12 +17,23 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
-Resources used: 
+Resources used and further reading: 
 
 * [2018 ASM Workshop "Microbiome Analysis Using R"](https://github.com/benjjneb/2018_ASM_Workshop)
 * [Workflow for Microbiome Data Analysis: from raw reads to community analyses.](https://www.bioconductor.org/help/course-materials/2017/BioC2017/Day1/Workshops/Microbiome/MicrobiomeWorkflowII.html)
 * [decontam vignette](https://benjjneb.github.io/decontam/vignettes/decontam_intro.html)
 * [Microviz ordination plots](https://david-barnett.github.io/microViz/articles/web-only/ordination.html)
+
+The way I organize my workflow aims to answer the following questions:
+
+*  Are there signficant differences in microbial community composition or alpha diversity due to variables of interest or within/between groups of interest?
+* If yes, how signficant are those changes and are there any confounding variables?
+* If yes, which microbial taxa are responsible for those differences? 
+
+Other questions:
+
+* Are there interesting or signficant microbial interactions and can we identify any keystone species? 
+* 
 
 
 
@@ -42,6 +53,7 @@ library(ggpubr)
 
 ```
 
+Here we will load the phyloseq object that we made using dada2. 
 ```{r load phyloseq object}
 
 ps <- readRDS("ps")
@@ -49,16 +61,18 @@ ps <- readRDS("ps")
 #extract the metadata
 meta <- as.data.frame(sample_data(ps))
 
-#clean up the column names 
+#clean up the column names for easier plotting
 meta <- meta %>% janitor::clean_names()
 
 #reassign the sample data to the ps object
 phyloseq::sample_data(ps) <- meta
 
+```
+
+The `psmelt` function takes your phyloseq object and puts it in a nice dataframe so we can easily make plots with `ggplot` 
+```{r}
 #create a dataframe from the ps object
 ps.df <- psmelt(ps)
-
-
 
 ```
 
@@ -82,7 +96,7 @@ theme_set(theme_linedraw())
 # Evaulate Data 
 
 
-First we'll check the number of reads in each sample
+First we'll check the number of reads in each sample. We'll identify any outliers with very few read counts.
 
 ## Read filtering
 
@@ -110,17 +124,12 @@ ss.df %>%
 
 ```
 
-None of the samples have very low reads
+None of the samples have very low read counts, though bore B has several before 2000 k reads. This is still normal. I would be concerned when read counts are an order of magnitute lower. 
 
 
+## Prevelance filtering
 
-
-
-## Taxa filtering
-
-### Prevelance filtering
-
-> In many biological settings, the set of all organisms from all samples are well-represented in the available taxonomic reference database. When (and only when) this is the case, it is reasonable or even advisable to filter taxonomic features for which a high-rank taxonomy could not be assigned. Such ambiguous features in this setting are almost always sequence artifacts that don’t exist in nature. It should be obvious that such a filter is not appropriate for samples from poorly characterized or novel specimens, at least until the possibility of taxonomic novelty can be satisfactorily rejected. Phylum is a useful taxonomic rank to consider using for this purpose, but others may work effectively for your data.
+> In many biological settings, the set of all organisms from all samples are well-represented in the available taxonomic reference database. When (and only when) this is the case, it is reasonable or even advisable to filter taxonomic features for which a high-rank taxonomy could not be assigned. Such ambiguous features in this setting are almost always sequence artifacts that don’t exist in nature. It should be obvious that such a filter is not appropriate for samples from poorly characterized or novel specimens, at least until the possibility of taxonomic novelty can be satisfactorily rejected. Phylum is a useful taxonomic rank to consider using for this purpose, but others may work effectively for your data. (Callahan et al. 2017. Workflow for Microbiome Data Analysis)
 
 ```{r create a table of read counts for each Phylum present in the dataset}
 
@@ -131,14 +140,15 @@ table(tax_table(ps)[, "Phylum"], exclude = NULL)
 
 ```
 
-Wow there are a lot of phyla. I'm not sure sure if its wise to remove anything since I don't think landfills are well characterized environment
-
-
+Wow there are a lot of phyla. I'm not sure sure if its wise to remove anything since landfills are not exactly well characterized environments. If we wanted to remove the uncharacterized phyla then we could do the following.
 ```{r remove ASVs uncharacterized at Phylum}
 
 # ps_filt.2 <- subset_taxa(ps_filt.1, !is.na(Phylum) & !Phylum %in% c("", "uncharacterized"))
 
 ```
+
+
+>...Explore the relationship of prevalence and total read count for each feature. Sometimes this reveals outliers that should probably be removed, and also provides insight into the ranges of either feature that might be useful. This aspect depends quite a lot on the experimental design and goals of the downstream inference, so keep these in mind. It may even be the case that different types of downstream inference require different choices here. There is no reason to expect ahead of time that a single filtering workflow is appropriate for all analysis. (Callahan et al. 2017. Workflow for Microbiome Data Analysis)
 
 ```{r prevalance}
 
@@ -160,9 +170,6 @@ plyr::ddply(prevdf, "Phylum", function(df1){cbind(mean(df1$Prevalence),sum(df1$P
 ```
 Column one is the mean prevalence (how many samples contain the ASV) of an ASV in that phylum 
 Column two is the total count of occurances across all OTUs
-
->...Explore the relationship of prevalence and total read count for each feature. Sometimes this reveals outliers that should probably be removed, and also provides insight into the ranges of either feature that might be useful. This aspect depends quite a lot on the experimental design and goals of the downstream inference, so keep these in mind. It may even be the case that different types of downstream inference require different choices here. There is no reason to expect ahead of time that a single filtering workflow is appropriate for all analysis.
-
 
 
 ```{r number of reads per ASV}
@@ -199,21 +206,7 @@ ps
 ps_filt
 
 ```
-
-
-I don't think I want to use the prevalence filtered object, there's no need
-
-
-# Phyloseq objects
-
-
-```{r relative abundance transformation}
-
-ps_rel <- transform_sample_counts(ps, function(OTU) OTU/sum(OTU))
-
-ps_rel.df <-psmelt(ps_rel)
-
-```
+We can use the `ps_filt` object later when we do differential abundance testing
 
 
 # Check out co-variates 
@@ -224,17 +217,79 @@ There are four main variables in this dataset that are of interest:
 * % moisture 
 * % total carbon
 
+It's worth exploring these variables on their own so we know how we want to plot up our microbial data later.
 ```{r covariates}
 
 ps.df %>% 
-  ggplot(aes(temp_c))+
-  geom_histogram()
+  ggplot(aes(depth_m, temp_c, color = bore))+
+  geom_line()+
+  geom_point()
+
+ps.df %>% 
+  ggplot(aes(depth_m, ave_percent_total_carbon, color = bore))+
+  geom_line()+
+  geom_point()+
+  geom_pointrange(aes(ymin = ave_percent_total_carbon - std_percent_total_carbon, ymax =  ave_percent_total_carbon + std_percent_total_carbon)) #add error bars
+
+ps.df %>% 
+  ggplot(aes(depth_m, avg_percent_moisture, color = bore))+
+  geom_line()+
+  geom_point()+
+  geom_pointrange(aes(ymin = avg_percent_moisture - std_percent_moisture, ymax =  avg_percent_moisture + std_percent_moisture)) #add error bars
 
 ```
 
-I'm not entirely sure I'm agreeing with the way that the dataset has been split into "high", "med", and "low" temperature
+```{r temp categories}
+
+ps.df %>% 
+  ggplot(aes(temp_group, temp_c))+
+  geom_boxplot()+
+  geom_point()
+
+
+```
+First I'm going to change the the groups to be >72 and less than 72 because that is when methanogensis is inhibited in landfills according to De la Cruz et al. 2021. These groups are arbitrary as far as I can tell. 
+
+There is also a temperature outlier which we may want to remove so we have more even sample groups. 
+
+```{r new group}
+
+
+ps.df <- ps.df %>% 
+  mutate(temp_grp = ifelse(temp_c > 72, "hot", "normal")) # create a new variable called "temp_grp", if the temperature is about 72, call it "hot", otherwise, "normal"
+
+
+ps.df %>% 
+  ggplot(aes(temp_grp, temp_c))+
+  geom_boxplot()+
+  geom_point()
+
+
+```
+
+
+
+# Data transformation
+
+For a lot of data visualization, we'll want to look at relative rather than absolute abundance, so here we can do that transformation and make a dataframe on the transformed phyloseq object.
+```{r relative abundance transformation}
+
+ps_rel <- transform_sample_counts(ps, function(OTU) OTU/sum(OTU))
+
+ps_rel.df <-psmelt(ps_rel)
+
+#make sure to add the new category to this dataframe as well
+ps_rel.df <- ps_rel.df %>% 
+  mutate(temp_grp = ifelse(temp_c > 72, "hot", "normal")) # create a new variable called "temp_grp", if the temperature is about 72, call it "hot", otherwise, "normal"
+
+
+```
+
+
+
 
 # Exlore taxonomy
+
 ```{r sunburst plot}
 
 ps_genus <- tax_glom(ps, taxrank= "Genus")
@@ -260,6 +315,13 @@ sunburst(sb_data, count = TRUE, legend = T)
 
 ```{r Bore holes}
 
+
+ps_rel.df %>%
+  ggplot(aes(depth_m, Abundance, color = Kingdom, fill = Kingdom))+
+  geom_bar(stat="identity")+
+  coord_flip()+
+  facet_wrap(~bore)
+
 ps_rel.df %>%
   ggplot(aes(depth_m, Abundance, color = Phylum, fill = Phylum))+
   geom_bar(stat="identity")+
@@ -267,14 +329,29 @@ ps_rel.df %>%
   facet_wrap(~bore)
   
 
-ps_rel.df %>%
-  ggplot(aes(depth_m, Abundance, color = Kingdom, fill = Kingdom))+
+
+```
+
+There are so many Phyla, maybe this time it makes sense to use our 5% prevalance filtered phyloseq object
+
+```{r prev filtered abundance}
+
+#transform sample counts
+ps_filt_rel <- transform_sample_counts(ps_filt, function(OTU) OTU/sum(OTU))
+
+#make a data frame
+ps_filt_rel.df <- psmelt(ps_filt_rel)
+
+ps_filt_rel.df %>%
+  filter(Abundance > 0.02) %>% 
+  ggplot(aes(depth_m, Abundance, color = Phylum, fill = Phylum))+
   geom_bar(stat="identity")+
   coord_flip()+
   facet_wrap(~bore)
-  
+
 
 ```
+
 
 
 # Alpha diversity
@@ -307,11 +384,17 @@ md <- data.frame(sample_data(ps))
 #merge the calculated diversity metrics to the metadata by the sample id column, now we have a diversity data with metadata to play with
 diversity.df <- merge(diversity, md, by = "id")
 
+diversity.df <- diversity.df %>% 
+   mutate(temp_grp = ifelse(temp_c > 72, "hot", "normal"))
+
+
 ```
 
 ```{r shannon diversity}
 
-ggplot(diversity.df, aes(temp_group, diversity_shannon))+
+diversity.df %>% 
+  filter(temp_c >45) %>% 
+ggplot(aes(temp_grp, diversity_shannon))+
   geom_boxplot()+
   geom_point()+
   stat_compare_means(method = "wilcox.test", #test significance
@@ -333,7 +416,7 @@ ggplot(diversity.df, aes(temp_c, diversity_shannon))+
 
 ```{r OTUs}
 
-ggplot(diversity.df, aes(temp_group, observed))+
+ggplot(diversity.df, aes(temp_grp, observed))+
   geom_boxplot()+
   geom_point()+
   stat_compare_means(method = "wilcox.test", #test significance
@@ -360,8 +443,7 @@ ggplot(diversity.df, aes(depth_m, observed))+
 
 
 
-There's only one sample below 47 degrees and it may be throwing off the linear regression
-
+Remove the one temperature outlier to see if the statistics change. 
 ```{r filt low temp sample}
 
 diversity.df %>% 
@@ -381,7 +463,7 @@ ggplot(aes(temp_c, diversity_shannon))+
 
 
 ```
-
+There's a pretty significant negative linear correlation between temperature and diversity when we remove that one outlier sample.
 
 
 # Beta diversity ordination
@@ -422,10 +504,9 @@ ps_clr.filt <- subset_samples(ps, temp_c > 45)
 
 ord_clr.filt <- phyloseq::ordinate(ps_clr.filt, "RDA") 
 
-plot_ordination(ps_clr.filt, ord_clr.filt, color = "temp_group", label = "id")
+plot_ordination(ps_clr.filt, ord_clr.filt, color = "temp_c", label = "id")
 
 ```
-
 
 ```{r RDA}
 
@@ -452,21 +533,41 @@ sample_data(ps_fix)$average_percent_moisture
 
 ```{r temp group}
 
+#remove the temperature outlier
+ps.2 <- subset_samples(ps, temp_c > 45) 
 
-dist_euc <- phyloseq::distance(ps, method="euclidean")
-metadata <- data.frame(sample_data(ps))
-results<- pairwiseAdonis::pairwise.adonis(dist_euc, metadata[, "temp_group"], perm = 10000, p.adjust.m = "bonferroni")
+#transform center log ratio
+ps.2_clr <- microbiome::transform(ps.2, "clr")
+
+#calculate euclidean distance matrix
+dist_euc <- phyloseq::distance(ps.2_clr, method="euclidean")
+
+#get metadata
+metadata <- data.frame(sample_data(ps.2))
+
+#add temp category
+metadata <- metadata %>%  mutate(temp_grp = ifelse(temp_c > 72, "hot", "normal")) 
+
+#conduct permanova and extract the results
+results <- pairwiseAdonis::pairwise.adonis(dist_euc, metadata[, "temp_grp"], perm = 10000, p.adjust.m = "bonferroni")
+
 results[,3:5] <- round(results[,3:5], 2)
+
 results
 
 
 ```
+Significantly different
 
-```{r}
-dist_euc <- phyloseq::distance(ps, method="euclidean")
-metadata <- data.frame(sample_data(ps))
-results<- pairwiseAdonis::pairwise.adonis(dist_euc, metadata[, "bore"], perm = 10000, p.adjust.m = "bonferroni")
+
+```{r bore}
+
+#conduct permanova and extract the results
+results <- pairwiseAdonis::pairwise.adonis(dist_euc, metadata[, "bore"], perm = 10000, p.adjust.m = "bonferroni")
+
 results[,3:5] <- round(results[,3:5], 2)
-results
-```
 
+results
+
+```
+A and B have slightly different microbial communities
