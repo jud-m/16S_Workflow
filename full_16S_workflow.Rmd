@@ -26,15 +26,9 @@ Resources used and further reading:
 
 The way I organize my workflow aims to answer the following questions:
 
-*  Are there signficant differences in microbial community composition or alpha diversity due to variables of interest or within/between groups of interest?
-* If yes, how signficant are those changes and are there any confounding variables?
+*  Are there significant differences in microbial community composition or alpha diversity due to variables of interest or within/between groups of interest?
+* If yes, how significant are those changes and are there any confounding variables?
 * If yes, which microbial taxa are responsible for those differences? 
-
-Other questions:
-
-* Are there interesting or signficant microbial interactions and can we identify any keystone species? 
-* 
-
 
 
 # load packages and data 
