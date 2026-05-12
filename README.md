@@ -1,26 +1,67 @@
-This is my general workflow for analyzing 16S rRNA sequencing data. Note that I am not a bioinformatics expert, these are just some things that have worked for me.
+# 16S rRNA Workflow in R
 
+A reproducible workflow analyzing 16S rRNA gene amplicon sequencing data in R. This is the reference pipeline I share with lab members and collaborators who are starting microbiome analyses.
 
-## Tutorials and papers utilized:
+The workflow assumes you're starting from a phyloseq object (post-DADA2) and walks through quality filtering, normalization, exploratory visualization, alpha and beta diversity, and PERMANOVA testing.
+If you don't have a phyloseq object yet, start with the example_dada2.html file to generate one.
 
-Callahan et al. (2016). Bioconductor Workflow for Microbiome Data Analysis: from raw reads to community analyses [Version 2]. F1000Reasearch.
+## View the rendered workflow
 
-Handley et al., "2018 ASM Using R to Analyze the Bacterial Microbiome Workshop"
+The cleanest way to see what this pipeline does is to open the rendered HTML report:
 
-https://benjjneb.github.io/dada2/tutorial_1_8.html
+[**full_16S_workflow.html**](full_16S_workflow.html)
 
-https://astrobiomike.github.io/
+The HTML shows every step with code, output, and figures inline. 
 
-http://joey711.github.io/phyloseq-demo/phyloseq-demo.html
+## What's inside
 
-https://mibwurrepo.github.io/Microbial-bioinformatics-introductory-course-Material-2018/citation.html
+| File | What it is |
+| --- | --- |
+| `full_16S_workflow.Rmd` | Main analysis pipeline (RMarkdown source) |
+| `full_16S_workflow.html` | Rendered report with code, output, and figures |
+| `example_dada2.html` | Companion: example DADA2 run for generating ASVs |
+| `merged_dada2.Rmd` | Companion: merging multiple DADA2 runs into one phyloseq object |
+| `MonarchHillData230322.csv` | Example metadata file (small example dataset) |
+| `2024_16S_Workflow.Rproj` | RStudio project file |
+| `Literature/` | Reference papers and tutorials I drew from |
 
-Further reading:
+## Pipeline overview
 
-http://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html
+1. **Load packages and data** — phyloseq, tidyverse, microViz, decontam, microbiome
+2. **Evaluate data** — read distribution checks, prevalence filtering, contaminant removal
+3. **Check covariates** — sample metadata sanity checks
+4. **Data transformation** —  options, with trade-offs noted
+5. **Explore taxonomy** — composition plots at multiple ranks
+6. **Alpha diversity** — Shannon, Simpson, observed, Chao1 with group comparisons
+7. **Beta diversity** — Bray-Curtis and UniFrac ordinations (PCoA, NMDS)
+8. **PERMANOVA** — testing whether group differences explain community variation
 
-Random Forest in R example: https://rpubs.com/michberr/randomforestmicrobe
+## Running it yourself
 
-LEfSe: https://bitbucket.org/biobakery/biobakery/wiki/lefse
+If you want to re-run the workflow on your own phyloseq object:
 
-ANCOM: https://www.ncbi.nlm.nih.gov/pubmed/26028277
+```r
+# Required packages
+install.packages(c("tidyverse", "vegan", "ggrepel"))
+
+# Bioconductor packages
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install(c("phyloseq", "decontam", "microbiome"))
+
+# microViz from GitHub
+install.packages("microViz", repos = c(davidbarnett = "https://david-barnett.r-universe.dev", getOption("repos")))
+```
+
+Then open `2024_16S_Workflow.Rproj` in RStudio and knit `full_16S_workflow.Rmd`.
+
+Last tested on R 4.3 with phyloseq 1.46.
+
+## Notes
+
+This is a teaching and reference workflow, not a benchmarked pipeline. The choices here (ordination methods, PERMANOVA over PERMDISP) reflect what I find useful as a starting point and what I cover with new students. For published analyses I adapt this pipeline to the specific study design.
+
+## Contact
+
+Judy Malas, Ph.D. — Postdoctoral Research Associate, University of Illinois Chicago
+[jmalas2@uic.edu](mailto:jmalas2@uic.edu) | [Google Scholar](https://scholar.google.com/citations?user=bzz-sH0AAAAJ&hl=en) | [LinkedIn](https://www.linkedin.com/in/judy-malas-646230114/)

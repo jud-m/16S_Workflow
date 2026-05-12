@@ -38,11 +38,11 @@ The way I organize my workflow aims to answer the following questions:
 library(phyloseq)
 library(tidyverse)
 library(ggrepel)
-library(decontam)
+#library(decontam)
 library(microbiome)
 library(microViz)
 library(sunburstR)
-library(pairwiseAdonis)
+#library(pairwiseAdonis)
 library(ggpubr)
 
 ```
@@ -61,7 +61,22 @@ meta <- meta %>% janitor::clean_names()
 #reassign the sample data to the ps object
 phyloseq::sample_data(ps) <- meta
 
+
+
 ```
+
+```{r save ps components separately}
+
+metadata <- ps@sam_data
+
+metadata <- as.data.frame(metadata)
+
+otu_table <- ps@otu_table
+
+taxa_table <- ps@tax_table
+
+```
+
 
 The `psmelt` function takes your phyloseq object and puts it in a nice dataframe so we can easily make plots with `ggplot` 
 ```{r}
@@ -87,7 +102,7 @@ theme_set(theme_linedraw())
 ```
 
 
-# Evaulate Data 
+# Evaluate Data 
 
 
 First we'll check the number of reads in each sample. We'll identify any outliers with very few read counts.
@@ -121,7 +136,7 @@ ss.df %>%
 None of the samples have very low read counts, though bore B has several before 2000 k reads. This is still normal. I would be concerned when read counts are an order of magnitute lower. 
 
 
-## Prevelance filtering
+## Prevalence filtering
 
 > In many biological settings, the set of all organisms from all samples are well-represented in the available taxonomic reference database. When (and only when) this is the case, it is reasonable or even advisable to filter taxonomic features for which a high-rank taxonomy could not be assigned. Such ambiguous features in this setting are almost always sequence artifacts that don’t exist in nature. It should be obvious that such a filter is not appropriate for samples from poorly characterized or novel specimens, at least until the possibility of taxonomic novelty can be satisfactorily rejected. Phylum is a useful taxonomic rank to consider using for this purpose, but others may work effectively for your data. (Callahan et al. 2017. Workflow for Microbiome Data Analysis)
 
@@ -281,8 +296,7 @@ ps_rel.df <- ps_rel.df %>%
 
 
 
-
-# Exlore taxonomy
+# Explore taxonomy
 
 ```{r sunburst plot}
 
