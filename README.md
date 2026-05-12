@@ -20,7 +20,6 @@ The HTML shows every step with code, output, and figures inline.
 | `full_16S_workflow.Rmd` | Main analysis pipeline (RMarkdown source) |
 | `full_16S_workflow.html` | Rendered report with code, output, and figures |
 | `example_dada2.html` | Companion: example DADA2 run for generating ASVs |
-| `merged_dada2.Rmd` | Companion: merging multiple DADA2 runs into one phyloseq object |
 | `MonarchHillData230322.csv` | Example metadata file (small example dataset) |
 | `2024_16S_Workflow.Rproj` | RStudio project file |
 | `Literature/` | Reference papers and tutorials I drew from |
