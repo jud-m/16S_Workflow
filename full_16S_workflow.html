@@ -12,7 +12,7 @@
 <meta name="author" content="Judy-Malas" />
 
 
-<title>full workflow</title>
+<title>A reproducible 16S rRNA workflow in R</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -13086,7 +13086,7 @@ border-radius: 0px;
 
 
 
-<h1 class="title toc-ignore">full workflow</h1>
+<h1 class="title toc-ignore">A reproducible 16S rRNA workflow in R</h1>
 <h4 class="author">Judy-Malas</h4>
 <h4 class="date">12/3/2024</h4>
 
@@ -13210,8 +13210,8 @@ rerun an analysis</p>
 <p>Set a theme so all ggplots look the same</p>
 <pre class="r"><code>theme_set(theme_linedraw())</code></pre>
 </div>
-<div id="evaulate-data" class="section level1">
-<h1>Evaulate Data</h1>
+<div id="evaluate-data" class="section level1">
+<h1>Evaluate Data</h1>
 <p>First we’ll check the number of reads in each sample. We’ll identify
 any outliers with very few read counts.</p>
 <div id="read-filtering" class="section level2">
@@ -13238,8 +13238,8 @@ ss.df %&gt;%
 several before 2000 k reads. This is still normal. I would be concerned
 when read counts are an order of magnitute lower.</p>
 </div>
-<div id="prevelance-filtering" class="section level2">
-<h2>Prevelance filtering</h2>
+<div id="prevalence-filtering" class="section level2">
+<h2>Prevalence filtering</h2>
 <blockquote>
 <p>In many biological settings, the set of all organisms from all
 samples are well-represented in the available taxonomic reference
@@ -13506,8 +13506,8 @@ ps_rel.df &lt;-psmelt(ps_rel)
 ps_rel.df &lt;- ps_rel.df %&gt;% 
   mutate(temp_grp = ifelse(temp_c &gt; 72, &quot;hot&quot;, &quot;normal&quot;)) # create a new variable called &quot;temp_grp&quot;, if the temperature is about 72, call it &quot;hot&quot;, otherwise, &quot;normal&quot;</code></pre>
 </div>
-<div id="exlore-taxonomy" class="section level1">
-<h1>Exlore taxonomy</h1>
+<div id="explore-taxonomy" class="section level1">
+<h1>Explore taxonomy</h1>
 <pre class="r"><code>ps_genus &lt;- tax_glom(ps, taxrank= &quot;Genus&quot;)
 
 ps_genus.df &lt;- psmelt(ps_genus)

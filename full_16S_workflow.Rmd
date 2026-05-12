@@ -1,5 +1,5 @@
 ---
-title: "full workflow"
+title: "A reproducible 16S rRNA workflow in R"
 author: "Judy-Malas"
 date: "12/3/2024"
 output: 
@@ -9,8 +9,6 @@ output:
       collapsed: yes
     theme: cosmo
 ---
-
-
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
