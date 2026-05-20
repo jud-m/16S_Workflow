@@ -60,7 +60,3 @@ Last tested on R 4.3 with phyloseq 1.46.
 
 This is a teaching and reference workflow, not a benchmarked pipeline. The choices here (ordination methods, PERMANOVA over PERMDISP) reflect what I find useful as a starting point and what I cover with new students. For published analyses I adapt this pipeline to the specific study design.
 
-## Contact
-
-Judy Malas, Ph.D. — Postdoctoral Research Associate, University of Illinois Chicago
-[jmalas2@uic.edu](mailto:jmalas2@uic.edu) | [Google Scholar](https://scholar.google.com/citations?user=bzz-sH0AAAAJ&hl=en) | [LinkedIn](https://www.linkedin.com/in/judy-malas-646230114/)
