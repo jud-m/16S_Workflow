@@ -58,5 +58,5 @@ Last tested on R 4.3 with phyloseq 1.46.
 
 ## Notes
 
-This is a teaching and reference workflow, not a benchmarked pipeline. The choices here (ordination methods, PERMANOVA over PERMDISP) reflect what I find useful as a starting point and what I cover with new students. For published analyses I adapt this pipeline to the specific study design.
+This is a teaching and reference workflow that draws from other tutorials referenced within each step. The choices here reflect what I find useful as a starting point and what I cover with new students. 
 
